@@ -22,7 +22,7 @@ A full-stack, modular, role-based web application connecting **Food Donors, NGOs
 ```bash
 cd backend
 python seed.py        # Initializes SQLite database & populates demo accounts
-python run.py         # Launches Flask REST API server on http://127.0.0.1:5000
+python run.py         # Launches Flask REST API server 
 ```
 
 ### 2. Frontend Web Application Setup
@@ -32,19 +32,6 @@ cd frontend
 npm install           # Installs React, Vite, Leaflet, Recharts, Lucide dependencies
 npm run dev           # Starts Vite Development Server on http://localhost:3000
 ```
-
----
-
-## 🔑 Pre-Configured Demo Credentials
-
-Use these demo accounts to log in at **[http://localhost:3000/login](http://localhost:3000/login)**:
-
-| Role | Username | Password | Key Portal Features |
-| :--- | :--- | :--- | :--- |
-| **Admin** | `admin` | `Admin@123` | NGO/Donor/Volunteer management, live tracking map, analytics dashboard, CSV report exporter, audit logs |
-| **Donor** | `donor` | `Donor@123` | Post surplus food (camera/file upload), location pin picker, 20-min cancellation window, NGO permission grant |
-| **NGO** | `ngo` | `Ngo@123` | Available food browsing, FSSAI quality verification checklist, live volunteer tracking, beneficiary photo proof confirmation (`Mark as Done NGO OK`) |
-| **Volunteer** | `volunteer` | `Volunteer@123` | Accept/Reject assignments, status workflow (*Assigned → Picked Up → Out for Delivery → Delivered*), HTML5 GPS location broadcasting |
 
 ---
 
