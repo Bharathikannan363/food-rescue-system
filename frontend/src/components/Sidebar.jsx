@@ -28,7 +28,7 @@ const Sidebar = () => {
           { to: '/admin/requests', label: 'NGO Requests', icon: FileText },
           { to: '/admin/assignments', label: 'Assignments', icon: CheckSquare },
           { to: '/admin/tracking', label: 'Live Tracking', icon: MapPin },
-          { to: '/admin/payments', label: 'Payments', icon: CreditCard },
+          
           { to: '/admin/reports', label: 'Reports', icon: FileText },
           { to: '/admin/analytics', label: 'Analytics', icon: BarChart2 },
           { to: '/admin/monitoring', label: 'System Monitoring', icon: Activity },

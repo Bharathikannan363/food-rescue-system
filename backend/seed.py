@@ -1,22 +1,51 @@
-import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
 from app import create_app
 from app.extensions import db
+
 from app.models import (
-    User, Donor, NGO, Volunteer, Donation,
-    Request as FoodRequest, Assignment, Delivery,
-    VolunteerLocation, Report, Payment, Log, Notification
+    User,
+    Donor,
+    NGO,
+    Volunteer,
+    Donation,
+    Request as FoodRequest,
+    Assignment,
+    Delivery,
+    VolunteerLocation,
+    Report,
+    Log
 )
+
+
+# ============================================================
+# CREATE FLASK APPLICATION
+# ============================================================
 
 app = create_app()
 
+
+# ============================================================
+# SEED DATABASE
+# ============================================================
+
 def seed_database():
+
     with app.app_context():
+
         print("Cleaning and seeding fresh database records...")
+
+        # ----------------------------------------------------
+        # DROP OLD TABLES AND CREATE FRESH TABLES
+        # ----------------------------------------------------
+
         db.drop_all()
         db.create_all()
 
-        # 1. Create Admin User
+        # ----------------------------------------------------
+        # 1. CREATE ADMIN USER
+        # ----------------------------------------------------
+
         admin_user = User(
             username='admin',
             email='admin@foodrescue.org',
@@ -25,10 +54,15 @@ def seed_database():
             is_approved=True,
             approval_status='APPROVED'
         )
+
         admin_user.set_password('Admin@123')
+
         db.session.add(admin_user)
 
-        # 2. Create Donor User & Profile
+        # ----------------------------------------------------
+        # 2. CREATE DONOR USER & PROFILE
+        # ----------------------------------------------------
+
         donor_user = User(
             username='donor',
             email='donor@hotelgrand.com',
@@ -37,8 +71,12 @@ def seed_database():
             is_approved=True,
             approval_status='APPROVED'
         )
+
         donor_user.set_password('Donor@123')
+
         db.session.add(donor_user)
+
+        # Generate donor user ID
         db.session.flush()
 
         donor_profile = Donor(
@@ -48,9 +86,13 @@ def seed_database():
             latitude=28.6139,
             longitude=77.2090
         )
+
         db.session.add(donor_profile)
 
-        # 3. Create NGO User & Profile
+        # ----------------------------------------------------
+        # 3. CREATE NGO USER & PROFILE
+        # ----------------------------------------------------
+
         ngo_user = User(
             username='ngo',
             email='contact@hopefoundation.org',
@@ -59,8 +101,12 @@ def seed_database():
             is_approved=True,
             approval_status='APPROVED'
         )
+
         ngo_user.set_password('Ngo@123')
+
         db.session.add(ngo_user)
+
+        # Generate NGO user ID
         db.session.flush()
 
         ngo_profile = NGO(
@@ -71,9 +117,13 @@ def seed_database():
             latitude=28.6250,
             longitude=77.2180
         )
+
         db.session.add(ngo_profile)
 
-        # 4. Create Volunteer User & Profile
+        # ----------------------------------------------------
+        # 4. CREATE VOLUNTEER USER & PROFILE
+        # ----------------------------------------------------
+
         vol_user = User(
             username='volunteer',
             email='alex.volunteer@gmail.com',
@@ -82,8 +132,12 @@ def seed_database():
             is_approved=True,
             approval_status='APPROVED'
         )
+
         vol_user.set_password('Volunteer@123')
+
         db.session.add(vol_user)
+
+        # Generate volunteer user ID
         db.session.flush()
 
         vol_profile = Volunteer(
@@ -95,15 +149,23 @@ def seed_database():
             latitude=28.6180,
             longitude=77.2130
         )
+
         db.session.add(vol_profile)
 
+        # Save users and profiles
         db.session.commit()
 
-        # 5. Create Sample Donations
+        # ----------------------------------------------------
+        # 5. CREATE SAMPLE DONATIONS
+        # ----------------------------------------------------
+
         donation1 = Donation(
             donor_id=donor_profile.id,
             title='Surplus Buffet Meals & Rice Bowls',
-            description='Freshly prepared vegetarian rice bowls, dal, and chapati from evening banquet event.',
+            description=(
+                'Freshly prepared vegetarian rice bowls, dal, '
+                'and chapati from evening banquet event.'
+            ),
             food_type='Cooked Meals',
             quantity='60 Meals',
             pickup_address=donor_profile.address,
@@ -111,10 +173,14 @@ def seed_database():
             longitude=donor_profile.longitude,
             status='APPROVED'
         )
+
         donation2 = Donation(
             donor_id=donor_profile.id,
             title='Fresh Bakery Breads & Muffins',
-            description='Assorted whole wheat breads, dinner rolls, and fruit muffins baked today.',
+            description=(
+                'Assorted whole wheat breads, dinner rolls, '
+                'and fruit muffins baked today.'
+            ),
             food_type='Bakery Items',
             quantity='35 Packs',
             pickup_address=donor_profile.address,
@@ -122,51 +188,87 @@ def seed_database():
             longitude=donor_profile.longitude,
             status='APPROVED'
         )
-        db.session.add_all([donation1, donation2])
+
+        db.session.add_all([
+            donation1,
+            donation2
+        ])
+
         db.session.commit()
 
-        # 6. Create NGO Request
+        # ----------------------------------------------------
+        # 6. CREATE NGO REQUEST
+        # ----------------------------------------------------
+
         req1 = FoodRequest(
             donation_id=donation1.id,
             ngo_id=ngo_profile.id,
             status='ACCEPTED',
             quality_status='VERIFIED',
-            quality_notes='Verified sealed food containers. Temperature checks optimal.'
+            quality_notes=(
+                'Verified sealed food containers. '
+                'Temperature checks optimal.'
+            )
         )
+
         db.session.add(req1)
+
+        # Update donation status
         donation1.status = 'DONOR_ACCEPTED'
+
         db.session.commit()
 
-        # 7. Create Volunteer Assignment
+        # ----------------------------------------------------
+        # 7. CREATE VOLUNTEER ASSIGNMENT
+        # ----------------------------------------------------
+
         assign1 = Assignment(
             request_id=req1.id,
             volunteer_id=vol_profile.id,
             status='ACCEPTED',
-            accepted_at=datetime.utcnow()
+            accepted_at=datetime.now(timezone.utc)
         )
+
         db.session.add(assign1)
+
+        # Update donation status
         donation1.status = 'VOLUNTEER_ASSIGNED'
+
         db.session.commit()
 
-        # 8. Create Delivery
+        # ----------------------------------------------------
+        # 8. CREATE DELIVERY
+        # ----------------------------------------------------
+
         delivery1 = Delivery(
             assignment_id=assign1.id,
-            pickup_time=datetime.utcnow() - timedelta(minutes=45),
+            pickup_time=(
+                datetime.now(timezone.utc)
+                - timedelta(minutes=45)
+            ),
             pickup_latitude=donor_profile.latitude,
             pickup_longitude=donor_profile.longitude,
             status='OUT_FOR_DELIVERY'
         )
+
         db.session.add(delivery1)
 
-        # 9. Create Volunteer Initial Location
+        # ----------------------------------------------------
+        # 9. CREATE VOLUNTEER INITIAL LOCATION
+        # ----------------------------------------------------
+
         vol_loc = VolunteerLocation(
             volunteer_id=vol_profile.id,
             latitude=28.6200,
             longitude=77.2140
         )
+
         db.session.add(vol_loc)
 
-        # 10. Create Initial Report & Payment & Logs
+        # ----------------------------------------------------
+        # 10. CREATE INITIAL REPORT
+        # ----------------------------------------------------
+
         rep = Report(
             month='April',
             year=2026,
@@ -175,32 +277,62 @@ def seed_database():
             beneficiaries=480,
             food_saved='70.0 kg'
         )
-        pay = Payment(
-            transaction_id='TXN-INIT-1001',
-            user_id=vol_user.id,
-            amount=500.0,
-            purpose='Volunteer Logistics Support Grant',
-            status='SUCCESS'
-        )
+
+        db.session.add(rep)
+
+        # ----------------------------------------------------
+        # 11. CREATE SYSTEM INITIALIZATION LOG
+        # ----------------------------------------------------
+
         log1 = Log(
             user_id=admin_user.id,
             action="SYSTEM_INIT",
             entity_type="System",
             entity_id=1,
-            description="Initialized Food Rescue & Redistribution System Database with Demo Accounts."
+            description=(
+                "Initialized Food Rescue & Redistribution "
+                "System Database with Demo Accounts."
+            )
         )
 
-        db.session.add_all([rep, pay, log1])
+        db.session.add(log1)
+
+        # ----------------------------------------------------
+        # SAVE DELIVERY, LOCATION, REPORT & LOG
+        # ----------------------------------------------------
+
         db.session.commit()
+
+        # ----------------------------------------------------
+        # SUCCESS MESSAGE
+        # ----------------------------------------------------
 
         print("==================================================")
         print(" Database Seeded Successfully!")
-        print(" Demo Credentials:")
-        print("  - Admin:     username: admin     password: Admin@123")
-        print("  - Donor:     username: donor     password: Donor@123")
-        print("  - NGO:       username: ngo       password: Ngo@123")
-        print("  - Volunteer: username: volunteer password: Volunteer@123")
         print("==================================================")
+        print(" Demo Credentials:")
+        print("")
+        print("  - Admin:")
+        print("    username: admin")
+        print("    password: Admin@123")
+        print("")
+        print("  - Donor:")
+        print("    username: donor")
+        print("    password: Donor@123")
+        print("")
+        print("  - NGO:")
+        print("    username: ngo")
+        print("    password: Ngo@123")
+        print("")
+        print("  - Volunteer:")
+        print("    username: volunteer")
+        print("    password: Volunteer@123")
+        print("==================================================")
+
+
+# ============================================================
+# RUN SEED
+# ============================================================
 
 if __name__ == '__main__':
     seed_database()
