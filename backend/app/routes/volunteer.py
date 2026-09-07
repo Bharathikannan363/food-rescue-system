@@ -1,0 +1,246 @@
+import os
+from datetime import datetime
+from flask import Blueprint, request, jsonify, current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from werkzeug.utils import secure_filename
+from app.extensions import db
+from app.models import User, Volunteer, Assignment, Delivery, VolunteerLocation
+from app.utils.decorators import role_required, approved_required
+from app.utils.logger import log_action
+from app.utils.validators import allowed_file
+from app.services.notification_service import create_notification
+
+volunteer_bp = Blueprint('volunteer', __name__, url_prefix='/api/volunteer')
+
+@volunteer_bp.route('/assignments', methods=['GET'])
+@jwt_required()
+@role_required(['VOLUNTEER'])
+@approved_required
+def get_volunteer_assignments():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    vol = user.volunteer_profile
+
+    assignments = Assignment.query.filter_by(volunteer_id=vol.id).order_by(Assignment.assigned_at.desc()).all()
+    return jsonify({'success': True, 'assignments': [a.to_dict() for a in assignments]})
+
+@volunteer_bp.route('/assignments/<int:assignment_id>/respond', methods=['POST'])
+@jwt_required()
+@role_required(['VOLUNTEER'])
+@approved_required
+def respond_assignment(assignment_id):
+    """
+    Race condition guard:
+    Only ONE volunteer can accept an assignment.
+    """
+    data = request.get_json() or {}
+    action = data.get('action', '').upper()  # ACCEPT or REJECT
+
+    if action not in ['ACCEPT', 'REJECT']:
+        return jsonify({'success': False, 'message': 'Action must be ACCEPT or REJECT'}), 400
+
+    assignment = Assignment.query.get(assignment_id)
+    if not assignment:
+        return jsonify({'success': False, 'message': 'Assignment not found'}), 404
+
+    # Check race condition: if already accepted by someone else
+    if action == 'ACCEPT' and assignment.status in ['ACCEPTED', 'PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'COMPLETED']:
+        return jsonify({
+            'success': False,
+            'message': 'This assignment has already been accepted by another volunteer.'
+        }), 409
+
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    vol = user.volunteer_profile
+
+    # Ownership check: only the assigned volunteer may respond
+    if assignment.volunteer_id != vol.id:
+        return jsonify({'success': False, 'message': 'This assignment is not assigned to you'}), 403
+
+    if action == 'ACCEPT':
+        assignment.status = 'ACCEPTED'
+        assignment.accepted_at = datetime.utcnow()
+        msg = f"Volunteer '{vol.full_name}' accepted the assignment"
+
+        # Create Delivery object
+        delivery = Delivery(
+            assignment_id=assignment.id,
+            status='ASSIGNED'
+        )
+        db.session.add(delivery)
+    else:
+        assignment.status = 'REJECTED'
+        assignment.rejected_at = datetime.utcnow()
+        msg = f"Volunteer '{vol.full_name}' rejected the assignment"
+
+    db.session.commit()
+
+    log_action(user_id, f"VOLUNTEER_ASSIGNMENT_{action}", "Assignment", assignment.id, msg)
+
+    # Notifications
+    req = assignment.request
+    if req:
+        if req.ngo and req.ngo.user:
+            create_notification(
+                user_id=req.ngo.user.id,
+                title=f"Volunteer {action}ed Delivery",
+                message=f"Volunteer {vol.full_name} has {action.lower()}ed the delivery assignment for '{req.donation.title}'.",
+                notif_type="INFO"
+            )
+
+    return jsonify({'success': True, 'message': f"Assignment {action.lower()}ed", 'assignment': assignment.to_dict()})
+
+@volunteer_bp.route('/update-status', methods=['POST'])
+@jwt_required()
+@role_required(['VOLUNTEER'])
+@approved_required
+def update_delivery_status():
+    """
+    Status workflow transitions:
+    ASSIGNED -> ACCEPTED -> PICKED_UP -> OUT_FOR_DELIVERY -> DELIVERED -> COMPLETED
+    """
+    data = request.get_json() or {}
+    assignment_id = data.get('assignment_id')
+    new_status = data.get('status', '').upper()
+
+    valid_statuses = ['PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED']
+    if new_status not in valid_statuses:
+        return jsonify({'success': False, 'message': 'Invalid status transition'}), 400
+
+    assignment = Assignment.query.get(assignment_id)
+    if not assignment:
+        return jsonify({'success': False, 'message': 'Assignment not found'}), 404
+
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    vol = user.volunteer_profile
+
+    # Ownership check: only the assigned volunteer may update the status
+    if assignment.volunteer_id != vol.id:
+        return jsonify({'success': False, 'message': 'This assignment is not assigned to you'}), 403
+
+    # Enforce documented workflow: ASSIGNED -> ACCEPTED -> PICKED_UP -> OUT_FOR_DELIVERY -> DELIVERED
+    allowed_previous = {
+        'PICKED_UP': ['ACCEPTED'],
+        'OUT_FOR_DELIVERY': ['PICKED_UP'],
+        'DELIVERED': ['OUT_FOR_DELIVERY']
+    }
+    if assignment.status not in allowed_previous[new_status]:
+        return jsonify({
+            'success': False,
+            'message': f"Invalid status transition: cannot move from '{assignment.status}' to '{new_status}'."
+        }), 400
+
+    delivery = Delivery.query.filter_by(assignment_id=assignment_id).first()
+    if not delivery:
+        delivery = Delivery(assignment_id=assignment_id)
+        db.session.add(delivery)
+
+    delivery.status = new_status
+    assignment.status = new_status
+    if assignment.request and assignment.request.donation:
+        assignment.request.donation.status = new_status
+
+    if new_status == 'PICKED_UP':
+        delivery.pickup_time = datetime.utcnow()
+        delivery.pickup_latitude = vol.latitude
+        delivery.pickup_longitude = vol.longitude
+    elif new_status == 'DELIVERED':
+        delivery.delivery_time = datetime.utcnow()
+        delivery.delivery_latitude = vol.latitude
+        delivery.delivery_longitude = vol.longitude
+
+    db.session.commit()
+
+    log_action(user_id, f"DELIVERY_STATUS_{new_status}", "Delivery", delivery.id, f"Volunteer updated delivery status to {new_status}")
+
+    # Send Notifications to NGO & Donor
+    req = assignment.request
+    if req:
+        if req.ngo and req.ngo.user:
+            create_notification(
+                user_id=req.ngo.user.id,
+                title=f"Delivery Status: {new_status}",
+                message=f"Food rescue delivery status updated to {new_status} by Volunteer {vol.full_name}.",
+                notif_type="INFO",
+                send_sms_alert=True,
+                recipient_phone=req.ngo.user.phone
+            )
+        if req.donation and req.donation.donor and req.donation.donor.user:
+            create_notification(
+                user_id=req.donation.donor.user.id,
+                title=f"Food Status: {new_status}",
+                message=f"Your donated food status is now {new_status}.",
+                notif_type="INFO"
+            )
+
+    return jsonify({'success': True, 'message': f"Delivery status updated to {new_status}", 'delivery': delivery.to_dict()})
+
+@volunteer_bp.route('/upload-proof', methods=['POST'])
+@jwt_required()
+@role_required(['VOLUNTEER'])
+@approved_required
+def upload_delivery_proof():
+    assignment_id = request.form.get('assignment_id')
+    delivery = Delivery.query.filter_by(assignment_id=assignment_id).first()
+    if not delivery:
+        return jsonify({'success': False, 'message': 'Delivery record not found'}), 404
+
+    # Ownership check: only the assigned volunteer may upload proof
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user or not user.volunteer_profile or delivery.assignment.volunteer_id != user.volunteer_profile.id:
+        return jsonify({'success': False, 'message': 'This delivery is not assigned to you'}), 403
+
+    if 'proof_image' in request.files:
+        file = request.files['proof_image']
+        if file and allowed_file(file.filename):
+            filename = secure_filename(f"proof_{int(datetime.utcnow().timestamp())}_{file.filename}")
+            upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'delivery')
+            os.makedirs(upload_dir, exist_ok=True)
+            file.save(os.path.join(upload_dir, filename))
+            delivery.proof_image = f"/uploads/delivery/{filename}"
+            delivery.status = 'DELIVERED'
+            db.session.commit()
+
+            return jsonify({'success': True, 'message': 'Delivery proof photo uploaded successfully', 'delivery': delivery.to_dict()})
+
+    return jsonify({'success': False, 'message': 'No valid image file uploaded'}), 400
+
+@volunteer_bp.route('/location', methods=['POST'])
+@jwt_required()
+def record_location():
+    """
+    POST /api/volunteer/location
+    GPS Tracking Endpoint for navigator.geolocation.watchPosition()
+    """
+    data = request.get_json() or {}
+    latitude = float(data.get('latitude', 0.0))
+    longitude = float(data.get('longitude', 0.0))
+
+    user_id = int(get_jwt_identity()) if get_jwt_identity() is not None else None
+    user = User.query.get(user_id) if user_id else None
+
+    vol = None
+    if user and user.volunteer_profile:
+        vol = user.volunteer_profile
+        vol.latitude = latitude
+        vol.longitude = longitude
+
+        loc_entry = VolunteerLocation(
+            volunteer_id=vol.id,
+            latitude=latitude,
+            longitude=longitude,
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(loc_entry)
+        db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'volunteer_id': vol.id if vol else None,
+        'latitude': latitude,
+        'longitude': longitude,
+        'timestamp': datetime.utcnow().isoformat()
+    })
