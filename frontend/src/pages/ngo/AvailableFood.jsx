@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ngoService } from '../../services/ngoService';
 import StatusBadge from '../../components/StatusBadge';
 import ExpiryBadge from '../../components/ExpiryBadge';
@@ -20,6 +20,8 @@ const NGOAvailableFood = () => {
   const [noExpiryConcern, setNoExpiryConcern] = useState(true);
   const [isSafe, setIsSafe] = useState(true);
   const [remarks, setRemarks] = useState('Verified food temperature & fresh hygiene conditions.');
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false); // synchronous guard: rapid re-clicks share one render
 
   const fetchDonations = async () => {
     try {
@@ -43,9 +45,11 @@ const NGOAvailableFood = () => {
 
   const handleRequestSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedDonation) return;
+    if (!selectedDonation || submittingRef.current) return; // guard against double-submit
 
     const qualityStatus = (isFresh && isPackaged && noExpiryConcern && isSafe) ? 'VERIFIED' : 'REJECTED_QUALITY';
+    submittingRef.current = true;
+    setSubmitting(true);
     try {
       const res = await ngoService.requestFood(selectedDonation.id, qualityStatus, remarks);
       if (res.success) {
@@ -55,6 +59,9 @@ const NGOAvailableFood = () => {
       }
     } catch (err) {
       alert(err.message);
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   };
 
@@ -174,8 +181,8 @@ const NGOAvailableFood = () => {
               <Button variant="secondary" onClick={() => setSelectedDonation(null)}>
                 Cancel
               </Button>
-              <Button type="submit" variant="success" icon={Check}>
-                APPROVE QUALITY & REQUEST FOOD
+              <Button type="submit" variant="success" icon={Check} disabled={submitting}>
+                {submitting ? 'Submitting Request...' : 'APPROVE QUALITY & REQUEST FOOD'}
               </Button>
             </div>
           </form>

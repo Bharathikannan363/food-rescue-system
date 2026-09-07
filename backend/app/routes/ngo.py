@@ -48,8 +48,9 @@ def request_food():
     user = User.query.get(user_id)
     ngo = user.ngo_profile
 
-    # Check if request already exists from this NGO
-    existing = FoodRequest.query.filter_by(donation_id=donation_id, ngo_id=ngo.id).first()
+    # Check if an ACTIVE request already exists from this NGO (rejected ones allow re-request)
+    existing = FoodRequest.query.filter_by(donation_id=donation_id, ngo_id=ngo.id) \
+        .filter(FoodRequest.status.in_(['PENDING', 'ACCEPTED'])).first()
     if existing:
         return jsonify({'success': False, 'message': 'You have already submitted a request for this donation'}), 400
 

@@ -202,7 +202,17 @@ def upload_delivery_proof():
             file.save(os.path.join(upload_dir, filename))
             delivery.proof_image = f"/uploads/delivery/{filename}"
             delivery.status = 'DELIVERED'
+
+            # Keep assignment and donation in sync with the delivered state
+            assignment = delivery.assignment
+            if assignment:
+                assignment.status = 'DELIVERED'
+                if assignment.request and assignment.request.donation:
+                    assignment.request.donation.status = 'DELIVERED'
+
             db.session.commit()
+
+            log_action(get_jwt_identity(), "DELIVERY_PROOF_UPLOADED", "Delivery", delivery.id, f"Volunteer uploaded delivery proof; status set to DELIVERED")
 
             return jsonify({'success': True, 'message': 'Delivery proof photo uploaded successfully', 'delivery': delivery.to_dict()})
 

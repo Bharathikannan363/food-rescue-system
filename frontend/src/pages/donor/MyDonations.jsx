@@ -30,6 +30,8 @@ const MyDonations = () => {
   }, []);
 
   const handleCancel = async (donationId) => {
+    // Cancellation is irreversible - guard against accidental clicks
+    if (!window.confirm('Cancel this donation permanently? This cannot be undone.')) return;
     try {
       const res = await donorService.cancelDonation(donationId);
       if (res.success) {
