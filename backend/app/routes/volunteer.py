@@ -43,20 +43,20 @@ def respond_assignment(assignment_id):
     if not assignment:
         return jsonify({'success': False, 'message': 'Assignment not found'}), 404
 
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    vol = user.volunteer_profile
+
+    # Ownership check first: unauthorized volunteers must not learn assignment state
+    if assignment.volunteer_id != vol.id:
+        return jsonify({'success': False, 'message': 'This assignment is not assigned to you'}), 403
+
     # Check race condition: if already accepted by someone else
     if action == 'ACCEPT' and assignment.status in ['ACCEPTED', 'PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'COMPLETED']:
         return jsonify({
             'success': False,
             'message': 'This assignment has already been accepted by another volunteer.'
         }), 409
-
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    vol = user.volunteer_profile
-
-    # Ownership check: only the assigned volunteer may respond
-    if assignment.volunteer_id != vol.id:
-        return jsonify({'success': False, 'message': 'This assignment is not assigned to you'}), 403
 
     if action == 'ACCEPT':
         assignment.status = 'ACCEPTED'
