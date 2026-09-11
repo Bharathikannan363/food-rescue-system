@@ -142,25 +142,7 @@ const Login = () => {
           </Button>
 
           {/* Demo Login Shortcuts */}
-          <div className="pt-3 border-t border-slate-100">
-            <p className="text-[11px] font-semibold text-slate-400 text-center uppercase tracking-wider mb-2">
-              Quick Demo Login Credentials
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button type="button" onClick={() => handleDemoFill('admin')} className="p-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold rounded-xl border border-purple-200">
-                🛡️ Admin
-              </button>
-              <button type="button" onClick={() => handleDemoFill('donor')} className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold rounded-xl border border-emerald-200">
-                🥗 Donor
-              </button>
-              <button type="button" onClick={() => handleDemoFill('ngo')} className="p-2 bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold rounded-xl border border-amber-200">
-                🏢 NGO
-              </button>
-              <button type="button" onClick={() => handleDemoFill('volunteer')} className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-xl border border-blue-200">
-                🚚 Volunteer
-              </button>
-            </div>
-          </div>
+          
 
           <div className="text-center pt-2">
             <p className="text-xs text-slate-500">
