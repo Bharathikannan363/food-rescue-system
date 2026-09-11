@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
 import LiveMap from '../../components/LiveMap';
-import Loading from '../../components/Loading';
-import ErrorMessage from '../../components/ErrorMessage';
 import { MapPin, RefreshCw } from 'lucide-react';
 
 const AdminLiveTracking = () => {
@@ -36,8 +34,6 @@ const AdminLiveTracking = () => {
     return () => clearInterval(interval);
   }, []);
 
-  if (loading) return <Loading text="Initializing GPS Live Map..." />;
-  if (error) return <ErrorMessage message={error} retry={fetchTracking} />;
 
   return (
     <div className="space-y-6">

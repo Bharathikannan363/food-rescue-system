@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
-import Loading from '../../components/Loading';
-import ErrorMessage from '../../components/ErrorMessage';
+
 
 const AdminRequests = () => {
   const [requests, setRequests] = useState([]);
@@ -35,8 +34,6 @@ const AdminRequests = () => {
     { header: 'Requested At', accessor: 'requested_at', cell: (r) => new Date(r.requested_at).toLocaleDateString() }
   ];
 
-  if (loading) return <Loading text="Loading NGO Food Requests..." />;
-  if (error) return <ErrorMessage message={error} retry={fetchRequests} />;
 
   return (
     <div className="space-y-6">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
 import Loading from '../../components/Loading';
-import ErrorMessage from '../../components/ErrorMessage';
+
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 
 const AdminAnalytics = () => {
@@ -26,7 +26,7 @@ const AdminAnalytics = () => {
   }, []);
 
   if (loading) return <Loading text="Loading System Analytics..." />;
-  if (error) return <ErrorMessage message={error} retry={fetchAnalytics} />;
+  
 
   const pieData = [
     { name: 'Completed', value: data.metrics.total_deliveries || 10 },
@@ -54,7 +54,7 @@ const AdminAnalytics = () => {
                 <XAxis dataKey="month" stroke="#94a3b8" />
                 <YAxis stroke="#94a3b8" />
                 <Tooltip />
-                <Bar dataKey="beneficiaries" fill="#10b981" radius={[8, 8, 0, 0]} name="Beneficiaries" />
+                <Bar dataKey="beneficiaries" fill="#10b981" radius={[8,8, 0, 0]} name="Beneficiaries" />
               </BarChart>
             </ResponsiveContainer>
           </div>

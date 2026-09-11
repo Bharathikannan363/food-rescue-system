@@ -4,8 +4,7 @@ import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal';
-import Loading from '../../components/Loading';
-import ErrorMessage from '../../components/ErrorMessage';
+
 import { MapPin, Radio } from 'lucide-react';
 
 const AdminAssignments = () => {
@@ -75,8 +74,6 @@ const AdminAssignments = () => {
     { header: 'Assigned Date', accessor: 'assigned_at', cell: (r) => new Date(r.assigned_at).toLocaleDateString() }
   ];
 
-  if (loading) return <Loading text="Loading Volunteer Assignments..." />;
-  if (error) return <ErrorMessage message={error} retry={fetchData} />;
 
   return (
     <div className="space-y-6">

@@ -3,7 +3,7 @@ import { adminService } from '../../services/adminService';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import Button from '../../components/Button';
-
+import Loading from '../../components/Loading';
 
 const AdminDonations = () => {
   const [donations, setDonations] = useState([]);
@@ -56,8 +56,6 @@ const AdminDonations = () => {
     }
   ];
 
-  if (loading) return <Loading text="Loading Surplus Food Donations..." />;
-  if (error) return <ErrorMessage message={error} retry={fetchDonations} />;
 
   return (
     <div className="space-y-6">
@@ -65,7 +63,6 @@ const AdminDonations = () => {
         <h2 className="text-2xl font-bold text-slate-800">All Surplus Food Donations</h2>
         <p className="text-xs text-slate-500 mt-0.5">Review and verify food posts across the system</p>
       </div>
-
       <DataTable columns={columns} data={donations} emptyText="No donations recorded." />
     </div>
   );

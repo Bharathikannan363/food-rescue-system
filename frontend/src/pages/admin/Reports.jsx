@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
 import DataTable from '../../components/DataTable';
-import Loading from '../../components/Loading';
-import ErrorMessage from '../../components/ErrorMessage';
 import { FileText, Download } from 'lucide-react';
 
 const AdminReports = () => {
@@ -57,9 +55,7 @@ const AdminReports = () => {
     }
   ];
 
-  if (loading) return <Loading text="Generating System Audit Reports..." />;
-  if (error) return <ErrorMessage message={error} retry={fetchReports} />;
-
+ 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
