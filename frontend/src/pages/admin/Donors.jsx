@@ -4,13 +4,11 @@ import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import Button from '../../components/Button';
 import SearchBar from '../../components/SearchBar';
-import Loading from '../../components/Loading';
-import ErrorMessage from '../../components/ErrorMessage';
+
 
 const AdminDonors = () => {
   const [donors, setDonors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
 
   const fetchDonors = async () => {
@@ -18,8 +16,6 @@ const AdminDonors = () => {
       setLoading(true);
       const res = await adminService.getDonors();
       if (res.success) setDonors(res.donors);
-    } catch (err) {
-      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -67,8 +63,6 @@ const AdminDonors = () => {
     }
   ];
 
-  if (loading) return <Loading text="Loading Donors..." />;
-  if (error) return <ErrorMessage message={error} retry={fetchDonors} />;
 
   return (
     <div className="space-y-6">

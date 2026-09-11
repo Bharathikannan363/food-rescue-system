@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
 import DashboardCard from '../../components/DashboardCard';
 import Loading from '../../components/Loading';
-import ErrorMessage from '../../components/ErrorMessage';
+
 import { UtensilsCrossed, PackageCheck, Users, HeartHandshake, Building2, Truck, Activity, ShieldCheck } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
@@ -18,8 +18,6 @@ const AdminDashboard = () => {
       if (res.success) {
         setData(res);
       }
-    } catch (err) {
-      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -29,17 +27,16 @@ const AdminDashboard = () => {
     fetchAnalytics();
   }, []);
 
-  if (loading) return <Loading text="Loading Admin Dashboard statistics..." />;
+  if (loading) return <Loading text="Loading Admin Dashboard" />;
   if (error) return <ErrorMessage message={error} retry={fetchAnalytics} />;
 
   const { metrics, charts } = data;
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Admin Overview Dashboard</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Real-time system statistics & redistribution monitoring</p>
+          
         </div>
         <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold border border-purple-200">
           <ShieldCheck className="w-4 h-4" /> System Online & Healthy
@@ -48,14 +45,14 @@ const AdminDashboard = () => {
 
       {/* 8 Primary Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <DashboardCard title="Total Donations" value={metrics.total_donations} icon={UtensilsCrossed} color="emerald" subtitle="All posted surplus meals" />
-        <DashboardCard title="Total Deliveries" value={metrics.total_deliveries} icon={PackageCheck} color="blue" subtitle="Successfully completed" />
-        <DashboardCard title="Beneficiaries Served" value={metrics.total_beneficiaries} icon={Users} color="purple" subtitle="Total people fed" />
-        <DashboardCard title="Food Saved (Est.)" value={metrics.food_saved_kg} icon={Activity} color="rose" subtitle="Diverted from waste" />
-        <DashboardCard title="Active Volunteers" value={metrics.active_volunteers} icon={Truck} color="blue" subtitle="Ready for pickup" />
-        <DashboardCard title="Pending Requests" value={metrics.pending_requests} icon={Activity} color="amber" subtitle="Awaiting donor response" />
-        <DashboardCard title="Registered NGOs" value={metrics.registered_ngos} icon={Building2} color="amber" subtitle="Active partner shelters" />
-        <DashboardCard title="Registered Donors" value={metrics.registered_donors} icon={HeartHandshake} color="emerald" subtitle="Caterers, hotels, stores" />
+        <DashboardCard title="Total Donations" value={metrics.total_donations} icon={UtensilsCrossed} color="emerald" />
+        <DashboardCard title="Total Deliveries" value={metrics.total_deliveries} icon={PackageCheck} color="blue" />
+        <DashboardCard title="Beneficiaries Served" value={metrics.total_beneficiaries} icon={Users} color="purple" />
+        <DashboardCard title="Food Saved (Est.)" value={metrics.food_saved_kg} icon={Activity} color="rose" />
+        <DashboardCard title="Active Volunteers" value={metrics.active_volunteers} icon={Truck} color="blue" />
+        <DashboardCard title="Pending Requests" value={metrics.pending_requests} icon={Activity} color="amber" />
+        <DashboardCard title="Registered NGOs" value={metrics.registered_ngos} icon={Building2} color="amber" />
+        <DashboardCard title="Registered Donors" value={metrics.registered_donors} icon={HeartHandshake} color="emerald"/>
       </div>
 
       {/* Redistribution Analytics Chart */}

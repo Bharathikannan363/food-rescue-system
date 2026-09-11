@@ -4,8 +4,7 @@ import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import Button from '../../components/Button';
 import SearchBar from '../../components/SearchBar';
-import Loading from '../../components/Loading';
-import ErrorMessage from '../../components/ErrorMessage';
+
 
 const AdminVolunteers = () => {
   const [volunteers, setVolunteers] = useState([]);
@@ -18,8 +17,6 @@ const AdminVolunteers = () => {
       setLoading(true);
       const res = await adminService.getVolunteers();
       if (res.success) setVolunteers(res.volunteers);
-    } catch (err) {
-      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -65,9 +62,6 @@ const AdminVolunteers = () => {
       )
     }
   ];
-
-  if (loading) return <Loading text="Loading Volunteers..." />;
-  if (error) return <ErrorMessage message={error} retry={fetchVolunteers} />;
 
   return (
     <div className="space-y-6">

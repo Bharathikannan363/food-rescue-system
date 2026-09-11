@@ -6,7 +6,7 @@ import Button from '../../components/Button';
 import SearchBar from '../../components/SearchBar';
 import FilterBar from '../../components/FilterBar';
 import Loading from '../../components/Loading';
-import ErrorMessage from '../../components/ErrorMessage';
+
 
 const AdminNGOs = () => {
   const [ngos, setNgos] = useState([]);
@@ -84,9 +84,8 @@ const AdminNGOs = () => {
     }
   ];
 
-  if (loading) return <Loading text="Loading NGO Registrations..." />;
-  if (error) return <ErrorMessage message={error} retry={fetchNGOs} />;
 
+ 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
