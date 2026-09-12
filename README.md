@@ -55,26 +55,99 @@ npm run dev           # Starts Vite Development Server on http://localhost:3000
 
 Use these demo accounts to log in at **[http://localhost:3000/login](http://localhost:3000/login)**:
 
-| Role | Username | Password | Key Portal Features |
-| :--- | :--- | :--- | :--- |
-| **Admin** | `admin` | `Admin@123` | User/NGO/Donor/Volunteer management, **proximity-ranked volunteer assignment**, live tracking map, analytics dashboard, CSV report exporter, audit logs |
-| **Donor** | `donor` | `Donor@123` | Post surplus food (photo upload, map pin, **prep/expiry times**), 20-min cancellation window, NGO permission grant |
-| **NGO** | `ngo` | `Ngo@123` | Browse available food with **expiry badges**, FSSAI quality verification checklist, live volunteer tracking, beneficiary photo proof confirmation (`Mark as Done NGO OK`) |
-| **Volunteer** | `volunteer` | `Volunteer@123` | Alex Rivera — accept assignments, enforced status workflow, HTML5 GPS broadcasting, proof upload. **Nearest volunteer in the proximity demo (~0.8 km)** |
-| **Volunteer 2** | `volunteer2` | `Volunteer@123` | Priya Sharma — second volunteer with a farther live GPS ping (~1.5 km) to demonstrate ranking |
-| **Volunteer 3** | `volunteer3` | `Volunteer@123` | Ravi Kumar — approved volunteer with **no location shared**, demonstrating the `NO LOCATION` handling |
+| Role | Username | Password | Organization / Name | Key Portal Features |
+| :--- | :--- | :--- | :--- | :--- |
+| **Admin** | `admin` | `Admin@123` | System Administrator | Monitor all activities, live volunteer GPS tracking map, donations & requests, analytics, audit logs |
+| **Donor** | `donor` | `Donor@123` | Grand Palace Hotel | Post surplus food, prep/expiry times, 20-min cancel window, track workflow progress |
+| **NGO 1** | `ngo` | `Ngo@123` | Hope & Care Shelter | Browse available food, FSSAI verification, **Accept food & broadcast to volunteers**, confirm delivery OK |
+| **NGO 2** | `ngo2` | `Ngo@123` | Annapoorna Food Relief | Second NGO to demonstrate multi-NGO view & race-guard (first NGO to accept locks the donation) |
+| **NGO 3** | `ngo3` | `Ngo@123` | Seva Community Kitchen | Third NGO shelter demonstrating community distribution and beneficiary confirmation |
+| **Volunteer 1** | `volunteer` | `Volunteer@123` | Alex Rivera (Van) | **Accept open broadcast deliveries**, enforced status workflow, HTML5 GPS broadcasting, proof upload |
+| **Volunteer 2** | `volunteer2` | `Volunteer@123` | Priya Sharma (Scooter) | Second volunteer demonstrating broadcast claiming competition and proximity ranking (~1.5 km) |
+| **Volunteer 3** | `volunteer3` | `Volunteer@123` | Ravi Kumar (Bike) | Third volunteer demonstrating open task view with dynamic location sharing |
 
 ---
 
-## 🔄 End-to-End Workflow Demonstration
+## 🔄 End-to-End Broadcast Workflow
 
-1. **Donor** logs in and posts surplus food with photo preview, pickup map pin, and **best-before/expiry time**.
-2. **NGO** browses available food with **FRESH / EXPIRING SOON / EXPIRED** badges, completes the **FSSAI Quality Check**, and submits a food request (expired donations are blocked).
-3. **Donor** reviews the NGO request and clicks **ACCEPT**.
-4. **Admin** opens the assignment screen — volunteers are **ranked nearest-first by live GPS distance** — and assigns a volunteer (manual override possible).
-5. **Volunteer** accepts the assignment, broadcasts live GPS position, updates delivery status (*Picked Up → Out for Delivery → Delivered* — order enforced server-side), and uploads the proof photo.
-6. **NGO** verifies the delivered food proof and submits the beneficiary count (`Mark as Done NGO OK`).
-7. **Admin** analytics, CSV monthly reports, and audit logs (with recorded pickup distances) update automatically.
+```
+                    ┌──────────────┐
+                    │    DONOR     │
+                    └──────┬───────┘
+                           │
+                    Create Donation
+                           │
+                           ▼
+                ┌─────────────────────┐
+                │ Donation Available  │
+                └──────────┬──────────┘
+                           │
+             ┌─────────────┼─────────────┐
+             ▼             ▼             ▼
+         NGO 1          NGO 2          NGO 3
+        Can View        Can View       Can View
+             │             │             │
+             └─────────────┼─────────────┘
+                           │
+                    One NGO Accepts
+                           │
+                           ▼
+                  ┌────────────────┐
+                  │ NGO Accepted   │
+                  └───────┬────────┘
+                          │
+                    Notify ALL
+                    Volunteers
+                          │
+             ┌────────────┼────────────┐
+             ▼            ▼            ▼
+        Volunteer 1  Volunteer 2  Volunteer 3
+        Can Accept   Can Accept   Can Accept
+             │            │            │
+             └────────────┼────────────┘
+                          │
+                  First Volunteer
+                     Accepts
+                          │
+                          ▼
+                ┌──────────────────┐
+                │ Volunteer        │
+                │ Assigned         │
+                └────────┬─────────┘
+                         │
+                       Pickup
+                         │
+                         ▼
+                    Delivery
+                         │
+                         ▼
+                    NGO receives
+                         │
+                         ▼
+                   Beneficiaries
+
+
+        ┌────────────────────────────────────┐
+        │              ADMIN                 │
+        │                                    │
+        │ Monitor all activities             │
+        │ Donors / NGOs / Volunteers         │
+        │ Donations / Requests / Assignments │
+        │ Live volunteer location            │
+        │ Delivery status                    │
+        │ Reports / Analytics / Logs         │
+        └────────────────────────────────────┘
+```
+
+1. **Donor**: Posts surplus food with photos, pickup coordinates, and preparation/expiry times. Status is **Donation Available**.
+2. **NGOs (NGO 1, 2, 3)**: All NGOs can view available food batches with FSSAI expiry & safety badges.
+3. **One NGO Accepts**: The first NGO to inspect and accept claims the donation (**NGO Accepted**). Other NGOs are prevented from duplicate claims via atomic 409 Conflict race guards.
+4. **Notify ALL Volunteers**: Automated broadcast notification and SMS alert is immediately dispatched to **ALL** approved volunteers.
+5. **Volunteers (Volunteer 1, 2, 3)**: All volunteers see the open delivery task in their broadcast feed.
+6. **First Volunteer Accepts**: First volunteer to accept claims the task (**Volunteer Assigned**). Subsequent claims by other volunteers are rejected with 409 Conflict.
+7. **Pickup & Delivery**: Volunteer marks **Picked Up** $\rightarrow$ **Out for Delivery** $\rightarrow$ uploads proof photo for **Delivered**.
+8. **NGO Receives & Beneficiaries**: NGO inspects the delivery proof, confirms receipt (**NGO OK**), and records total beneficiary count (**Completed**).
+9. **Admin**: Monitors all activities, live GPS locations, fulfillment statuses, impact analytics, and audit logs.
 
 ---
 

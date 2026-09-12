@@ -75,6 +75,21 @@ const MyDonations = () => {
         </div>
       )
     },
+    {
+      header: 'NGO & Volunteer',
+      cell: (r) => (
+        <div className="text-xs space-y-0.5">
+          {r.accepted_ngo_name ? (
+            <p className="font-semibold text-blue-700">🏢 {r.accepted_ngo_name}</p>
+          ) : (
+            <p className="text-slate-400 italic">Awaiting NGO Acceptance</p>
+          )}
+          {r.assigned_volunteer_name && (
+            <p className="font-semibold text-emerald-700">🚴 {r.assigned_volunteer_name}</p>
+          )}
+        </div>
+      )
+    },
     { header: 'Status', accessor: 'status', cell: (r) => <StatusBadge status={r.status} /> },
     {
       header: '20-Min Cancellation',
@@ -107,6 +122,24 @@ const MyDonations = () => {
       <div>
         <h2 className="text-2xl font-bold text-slate-800">My Surplus Food Donations</h2>
         <p className="text-xs text-slate-500 mt-0.5">Track your posted donations & manage 20-minute cancellation window</p>
+      </div>
+
+      {/* Workflow Stepper Guide */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Redistribution Workflow</p>
+        <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600">
+          <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-bold">1. Available</span>
+          <span>➔</span>
+          <span className="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-lg font-bold">2. NGO Accepted</span>
+          <span>➔</span>
+          <span className="px-2.5 py-1 bg-indigo-100 text-indigo-800 rounded-lg font-bold">3. Volunteer Assigned</span>
+          <span>➔</span>
+          <span className="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg font-bold">4. Picked Up</span>
+          <span>➔</span>
+          <span className="px-2.5 py-1 bg-amber-100 text-amber-900 rounded-lg font-bold">5. Out for Delivery</span>
+          <span>➔</span>
+          <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-bold">6. Beneficiaries Fed</span>
+        </div>
       </div>
 
       <DataTable columns={columns} data={donations} emptyText="No food donations posted yet." />

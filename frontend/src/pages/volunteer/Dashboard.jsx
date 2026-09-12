@@ -7,21 +7,26 @@ import StatusBadge from '../../components/StatusBadge';
 import Button from '../../components/Button';
 import Loading from '../../components/Loading';
 import ErrorMessage from '../../components/ErrorMessage';
-import { Truck, CheckSquare, PackageCheck, MapPin, Navigation } from 'lucide-react';
+import { Truck, CheckSquare, PackageCheck, MapPin, Navigation, Radio, ArrowRight } from 'lucide-react';
 
 const VolunteerDashboard = () => {
   const [assignments, setAssignments] = useState([]);
+  const [openTasks, setOpenTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // HTML5 Geolocation WatchPosition Hook (broadcasts location to Flask API)
   const { location, error: geoError } = useGeolocation(true);
 
-  const fetchAssignments = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await volunteerService.getAssignments();
-      if (res.success) setAssignments(res.assignments);
+      const [assignsRes, tasksRes] = await Promise.all([
+        volunteerService.getAssignments(),
+        volunteerService.getAvailableTasks()
+      ]);
+      if (assignsRes.success) setAssignments(assignsRes.assignments || []);
+      if (tasksRes.success) setOpenTasks(tasksRes.tasks || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -30,11 +35,17 @@ const VolunteerDashboard = () => {
   };
 
   useEffect(() => {
-    fetchAssignments();
+    fetchData();
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
   }, []);
 
-  if (loading) return <Loading text="Loading Volunteer Dashboard..." />;
-  if (error) return <ErrorMessage message={error} retry={fetchAssignments} />;
+  if (loading && assignments.length === 0 && openTasks.length === 0) {
+    return <Loading text="Loading Volunteer Dashboard..." />;
+  }
+  if (error && assignments.length === 0 && openTasks.length === 0) {
+    return <ErrorMessage message={error} retry={fetchData} />;
+  }
 
   const activeAssign = assignments.find(a => ['ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'OUT_FOR_DELIVERY'].includes(a.status));
   const completedAssigns = assignments.filter(a => ['DELIVERED', 'COMPLETED'].includes(a.status));
@@ -52,11 +63,59 @@ const VolunteerDashboard = () => {
         </div>
       </div>
 
+      {/* Broadcast Alert Banner if open tasks exist */}
+      {openTasks.length > 0 && (
+        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-4 rounded-2xl shadow-md flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-xl">
+              <Radio className="w-5 h-5 text-white animate-pulse" />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm">
+                {openTasks.length} New Food Delivery Task{openTasks.length > 1 ? 's' : ''} Broadcasted!
+              </h4>
+              <p className="text-xs text-emerald-100">
+                Accepted by NGOs and ready for pickup. First volunteer to accept claims the task.
+              </p>
+            </div>
+          </div>
+          <Link to="/volunteer/assignments">
+            <Button size="sm" variant="secondary" icon={ArrowRight}>
+              View & Claim Now
+            </Button>
+          </Link>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <DashboardCard title="Total Assignments" value={assignments.length} icon={CheckSquare} color="emerald" subtitle="Assigned by admin" />
-        <DashboardCard title="Active Duty" value={activeAssign ? 1 : 0} icon={Truck} color="blue" subtitle={activeAssign ? activeAssign.status : 'Free'} />
-        <DashboardCard title="Completed Runs" value={completedAssigns.length} icon={PackageCheck} color="purple" subtitle="Delivered to NGOs" />
-        <DashboardCard title="GPS Broadcasting" value={location.latitude ? 'Active' : 'Standby'} icon={Navigation} color="amber" subtitle="HTML5 Geolocation API" />
+        <DashboardCard
+          title="Open Broadcasts"
+          value={openTasks.length}
+          icon={Radio}
+          color="emerald"
+          subtitle="Ready for claim"
+        />
+        <DashboardCard
+          title="Active Duty"
+          value={activeAssign ? 1 : 0}
+          icon={Truck}
+          color="blue"
+          subtitle={activeAssign ? activeAssign.status?.replace(/_/g, ' ') : 'Free'}
+        />
+        <DashboardCard
+          title="My Completed Runs"
+          value={completedAssigns.length}
+          icon={PackageCheck}
+          color="purple"
+          subtitle="Delivered to NGOs"
+        />
+        <DashboardCard
+          title="GPS Broadcasting"
+          value={location.latitude ? 'Active' : 'Standby'}
+          icon={Navigation}
+          color="amber"
+          subtitle="HTML5 Geolocation API"
+        />
       </div>
 
       {/* Active Assignment Card */}

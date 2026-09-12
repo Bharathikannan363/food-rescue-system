@@ -2,7 +2,7 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db
-from app.models import User, NGO, Donation, Request as FoodRequest, Assignment, Delivery, VolunteerLocation
+from app.models import User, NGO, Volunteer, Donation, Request as FoodRequest, Assignment, Delivery, VolunteerLocation
 from app.utils.decorators import role_required, approved_required
 from app.utils.logger import log_action
 from app.services.notification_service import create_notification
@@ -18,13 +18,101 @@ def get_available_donations():
     user = User.query.get(user_id)
     ngo = user.ngo_profile
 
-    # Filter donations that are APPROVED and either public or allowed for this NGO
+    # Filter donations that are AVAILABLE/APPROVED and either public or allowed for this NGO
     donations = Donation.query.filter(
-        Donation.status.in_(['APPROVED', 'NGO_REQUESTED']),
+        Donation.status.in_(['APPROVED', 'AVAILABLE', 'NGO_REQUESTED']),
         (Donation.allowed_ngo_id.is_(None)) | (Donation.allowed_ngo_id == ngo.id)
     ).order_by(Donation.created_at.desc()).all()
 
     return jsonify({'success': True, 'donations': [d.to_dict() for d in donations]})
+
+@ngo_bp.route('/accept-donation', methods=['POST'])
+@jwt_required()
+@role_required(['NGO'])
+@approved_required
+def accept_donation():
+    """
+    Workflow Step: One NGO Accepts
+    Transition: Donation Available -> NGO Accepted -> Notify ALL Volunteers
+    """
+    data = request.get_json() or {}
+    donation_id = data.get('donation_id')
+    quality_status = data.get('quality_status', 'VERIFIED')
+    quality_notes = data.get('quality_notes', 'Food quality verified safe for distribution.')
+
+    donation = Donation.query.get(donation_id)
+    if not donation:
+        return jsonify({'success': False, 'message': 'Donation not found'}), 404
+
+    if donation.expiry_state() == 'EXPIRED':
+        return jsonify({'success': False, 'message': f"'{donation.title}' has expired and can no longer be accepted."}), 400
+
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    ngo = user.ngo_profile
+
+    if donation.allowed_ngo_id and donation.allowed_ngo_id != ngo.id:
+        return jsonify({'success': False, 'message': 'This donation is reserved for another specific NGO.'}), 403
+
+    # Concurrency / race condition protection: only ONE NGO can accept
+    if donation.status in ['NGO_ACCEPTED', 'DONOR_ACCEPTED', 'VOLUNTEER_ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'COMPLETED']:
+        return jsonify({'success': False, 'message': 'This donation has already been accepted by another NGO.'}), 409
+
+    # Set donation status to NGO_ACCEPTED
+    donation.status = 'NGO_ACCEPTED'
+
+    # Create or update food request record
+    food_req = FoodRequest.query.filter_by(donation_id=donation.id, ngo_id=ngo.id).first()
+    if not food_req:
+        food_req = FoodRequest(
+            donation_id=donation.id,
+            ngo_id=ngo.id,
+            status='ACCEPTED',
+            quality_status=quality_status,
+            quality_notes=quality_notes,
+            responded_at=datetime.utcnow()
+        )
+        db.session.add(food_req)
+    else:
+        food_req.status = 'ACCEPTED'
+        food_req.quality_status = quality_status
+        food_req.quality_notes = quality_notes
+        food_req.responded_at = datetime.utcnow()
+
+    db.session.commit()
+
+    log_action(user_id, "NGO_DONATION_ACCEPTED", "Donation", donation.id, f"NGO '{ngo.ngo_name}' accepted donation '{donation.title}'")
+
+    # 1. Notify Donor
+    if donation.donor and donation.donor.user:
+        create_notification(
+            user_id=donation.donor.user.id,
+            title="Donation Accepted by NGO",
+            message=f"NGO '{ngo.ngo_name}' has accepted your donation '{donation.title}'. Volunteers have been notified for pickup.",
+            notif_type="SUCCESS",
+            send_sms_alert=True,
+            recipient_phone=donation.donor.user.phone
+        )
+
+    # 2. Notify ALL approved volunteers (Broadcast model)
+    volunteers = Volunteer.query.join(User).filter(User.approval_status == 'APPROVED').all()
+    for vol in volunteers:
+        if vol.user:
+            create_notification(
+                user_id=vol.user.id,
+                title="New Food Delivery Available!",
+                message=f"Surplus food '{donation.title}' ({donation.quantity}) is ready for pickup from {donation.pickup_address} for NGO '{ngo.ngo_name}'. First volunteer to accept claims the task!",
+                notif_type="INFO",
+                send_sms_alert=True,
+                recipient_phone=vol.user.phone
+            )
+
+    return jsonify({
+        'success': True,
+        'message': f"Donation accepted! Broadcast alert sent to all {len(volunteers)} volunteers.",
+        'donation': donation.to_dict(),
+        'request': food_req.to_dict()
+    })
 
 @ngo_bp.route('/request-food', methods=['POST'])
 @jwt_required()

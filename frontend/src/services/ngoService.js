@@ -2,6 +2,9 @@ import api from './api';
 
 export const ngoService = {
   getAvailableDonations: () => api.get('/ngo/available-donations'),
+  acceptDonation: (donation_id, quality_status, quality_notes) => api.post('/ngo/accept-donation', {
+    donation_id, quality_status, quality_notes
+  }),
   requestFood: (donation_id, quality_status, quality_notes) => api.post('/ngo/request-food', {
     donation_id, quality_status, quality_notes
   }),

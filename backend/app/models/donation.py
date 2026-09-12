@@ -40,6 +40,18 @@ class Donation(db.Model):
 
     def to_dict(self):
         donor_info = self.donor.to_dict() if self.donor else {}
+        
+        # Determine accepted NGO and assigned volunteer if applicable
+        accepted_req = next((r for r in self.requests if r.status in ['ACCEPTED', 'COMPLETED']), None)
+        accepted_ngo_name = accepted_req.ngo.ngo_name if accepted_req and accepted_req.ngo else None
+        accepted_ngo_id = accepted_req.ngo_id if accepted_req else None
+        
+        assigned_vol_name = None
+        if accepted_req and accepted_req.assignments:
+            active_assign = next((a for a in accepted_req.assignments if a.status in ['ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'COMPLETED']), None)
+            if active_assign and active_assign.volunteer:
+                assigned_vol_name = active_assign.volunteer.full_name
+
         return {
             'id': self.id,
             'donor_id': self.donor_id,
@@ -58,6 +70,9 @@ class Donation(db.Model):
             'expiry_time': self.expiry_time.isoformat() if self.expiry_time else None,
             'expiry_state': self.expiry_state(),
             'status': self.status,
+            'accepted_ngo_id': accepted_ngo_id,
+            'accepted_ngo_name': accepted_ngo_name,
+            'assigned_volunteer_name': assigned_vol_name,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'cancelled_at': self.cancelled_at.isoformat() if self.cancelled_at else None

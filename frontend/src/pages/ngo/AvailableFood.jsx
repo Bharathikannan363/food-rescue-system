@@ -51,9 +51,9 @@ const NGOAvailableFood = () => {
     submittingRef.current = true;
     setSubmitting(true);
     try {
-      const res = await ngoService.requestFood(selectedDonation.id, qualityStatus, remarks);
+      const res = await ngoService.acceptDonation(selectedDonation.id, qualityStatus, remarks);
       if (res.success) {
-        alert('Food quality verified and request submitted to Donor!');
+        alert('Food quality verified! Donation accepted and broadcast notification dispatched to ALL volunteers for pickup.');
         setSelectedDonation(null);
         fetchDonations();
       }
@@ -106,7 +106,7 @@ const NGOAvailableFood = () => {
               disabled={d.expiry_state === 'EXPIRED'}
               onClick={() => handleOpenQualityModal(d)}
             >
-              {d.expiry_state === 'EXPIRED' ? 'Expired - Cannot Request' : 'Verify Quality & Request Food'}
+              {d.expiry_state === 'EXPIRED' ? 'Expired - Cannot Accept' : 'Verify Quality & Accept Donation'}
             </Button>
           </div>
         ))}
@@ -182,7 +182,7 @@ const NGOAvailableFood = () => {
                 Cancel
               </Button>
               <Button type="submit" variant="success" icon={Check} disabled={submitting}>
-                {submitting ? 'Submitting Request...' : 'APPROVE QUALITY & REQUEST FOOD'}
+                {submitting ? 'Accepting & Broadcasting...' : 'ACCEPT DONATION (NOTIFY ALL VOLUNTEERS)'}
               </Button>
             </div>
           </form>
