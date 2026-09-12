@@ -5,7 +5,7 @@ import ProtectedRoute from './ProtectedRoute';
 // Auth Pages
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
-import ForgotPassword from '../pages/auth/ForgotPassword';
+
 
 // Admin Pages
 import AdminDashboard from '../pages/admin/Dashboard';
@@ -59,7 +59,7 @@ const AppRoutes = () => {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
+      
 
       {/* Admin Protected Routes */}
       <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminDashboard /></ProtectedRoute>} />
@@ -75,8 +75,7 @@ const AppRoutes = () => {
      
       <Route path="/admin/notifications" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminNotifications /></ProtectedRoute>} />
       <Route path="/admin/logs" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminLogs /></ProtectedRoute>} />
-      <Route path="/admin/monitoring" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminMonitoring /></ProtectedRoute>} />
-
+    
       {/* Donor Protected Routes */}
       <Route path="/donor/dashboard" element={<ProtectedRoute allowedRoles={['DONOR']}><DonorDashboard /></ProtectedRoute>} />
       <Route path="/donor/post-food" element={<ProtectedRoute allowedRoles={['DONOR']}><DonorPostFood /></ProtectedRoute>} />

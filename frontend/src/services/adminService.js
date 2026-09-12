@@ -14,8 +14,5 @@ export const adminService = {
   getLiveTracking: () => api.get('/admin/tracking'),
   getAnalytics: () => api.get('/admin/analytics'),
   getReports: () => api.get('/admin/reports'),
-  getPayments: () => api.get('/admin/payments'),
-  processPayment: (data) => api.post('/admin/payments', data),
   getLogs: () => api.get('/admin/logs'),
-  getMonitoring: () => api.get('/admin/monitoring')
 };

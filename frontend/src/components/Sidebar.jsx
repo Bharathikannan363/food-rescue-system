@@ -31,7 +31,6 @@ const Sidebar = () => {
 
           { to: '/admin/reports', label: 'Reports', icon: FileText },
           { to: '/admin/analytics', label: 'Analytics', icon: BarChart2 },
-          { to: '/admin/monitoring', label: 'System Monitoring', icon: Activity },
           { to: '/admin/logs', label: 'Audit Logs', icon: ShieldAlert },
         ];
       case 'DONOR':

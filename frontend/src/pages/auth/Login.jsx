@@ -141,8 +141,6 @@ const Login = () => {
             {loading ? 'Authenticating...' : 'Sign In'}
           </Button>
 
-          {/* Demo Login Shortcuts */}
-          
 
           <div className="text-center pt-2">
             <p className="text-xs text-slate-500">
