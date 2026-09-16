@@ -18,7 +18,6 @@ import AdminAssignments from '../pages/admin/Assignments';
 import AdminLiveTracking from '../pages/admin/LiveTracking';
 import AdminReports from '../pages/admin/Reports';
 import AdminAnalytics from '../pages/admin/Analytics';
-
 import AdminNotifications from '../pages/admin/Notifications';
 import AdminLogs from '../pages/admin/Logs';
 import AdminMonitoring from '../pages/admin/Monitoring';
