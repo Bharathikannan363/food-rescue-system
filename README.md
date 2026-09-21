@@ -1,5 +1,4 @@
 # Database structure
-
 ```text
 database/
 ├── schema.sql       # Creates all database tables
@@ -10,7 +9,6 @@ database/
 ### Tables
 
 | Table                 | Purpose                                                         |
-|                       |                                                                 |
 | `users`               | Stores user accounts, login details, roles, and approval status |
 | `donors`              | Stores donor details and locations                              |
 | `ngos`                | Stores NGO details, registration information, and locations     |
