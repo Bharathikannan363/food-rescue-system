@@ -1,4 +1,3 @@
--- Schema SQL for Food Rescue & Redistribution System
 
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -137,6 +136,8 @@ CREATE TABLE IF NOT EXISTS reports (
     generated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+
+=======
 
 CREATE TABLE IF NOT EXISTS logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
