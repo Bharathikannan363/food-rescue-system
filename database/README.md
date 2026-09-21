@@ -1,12 +1,27 @@
-# Food Rescue Database Layer
+## Database Structure
 
-This directory manages the SQLite database file (`food_rescue.db`), DDL schemas (`schema.sql`), and initial data seeds (`seed_data.sql`).
+database/
+        ├── schema.sql    # Creates all database tables 
+        ├── seed_data.sql # Inserts sample data 
+        └── README.md     # Database documentation
 
-## Automatic Initialization
+## Tables
 
-The database is managed via Python Flask-SQLAlchemy.
-To seed or re-initialize the database with demo accounts:
+Table             Purpose
+users	            Stores user accounts, login details, roles, and approval status
+donors	            Stores donor and organization details
+ngos	            Stores NGO details and registration information
+volunteers	        Stores volunteer details, vehicles, and availability
+donations	        Stores food donation information
+requests	        Stores NGO requests for food donations
+assignments	        Assigns volunteers to donation requests
+deliveries	        Stores food pickup and delivery information
+volunteer_locations	Stores volunteer location tracking information
+notifications	    Stores notifications sent to users
+reports	Stores      monthly food rescue statistics
+logs	            Stores system activity and audit logs
 
+## Testing Initialization
 ```bash
 cd backend
 python seed.py
