@@ -147,7 +147,7 @@ project/
         │   └── ProtectedRoute.jsx       # Role access route guard
         ├── 📁 pages/                    # Portal Page Views
         │   ├── 📁 auth/                 # Login, Register, Captcha, ForgotPassword
-        │   ├── 📁 admin/                # Admin Dashboard, NGOs, Donors, Volunteers, Donations, Requests, Assignments, LiveTracking, Reports, Analytics, Payments, Notifications, Logs, M
+        │   ├── 📁 admin/                # Admin Dashboard, NGOs, Donors, Volunteers, Donations, Requests, Assignments, LiveTracking, Reports, Analytics, Payments,
         │   ├── 📁 donor/                # Donor Dashboard, PostFood, MyDonations, Requests, Tracking, Notifications, History
         │   ├── 📁 ngo/                  # NGO Dashboard, AvailableFood, Requests, Deliveries, Tracking, Beneficiaries, FoodVerification, Notifications
         │   └── 📁 volunteer/            # Volunteer Dashboard, MyAssignments, AvailableAssignments, Tracking, Notifications, History
