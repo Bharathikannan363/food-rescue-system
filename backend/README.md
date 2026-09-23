@@ -1,19 +1,55 @@
 ## project structure backendbackend
 
-├── run.py               # Main entry point (Port 5000)
-├── seed.py              # Demo accounts seeding
-├── requirements.txt     # Dependencies
-├── .env                 # Environment variables
-├── .gitignore           # Git ignore rules
-├── uploads/             # File storage
-│   ├── food/            # Surplus food images
-│   ├── delivery/        # Volunteer delivery proof
-│   └── beneficiaries/   # Beneficiary proof photos
-└── app/                 # Flask Application
-├── init.py              # App factory
-├── config.py            # Config (env, DB)
-├── extensions.py        # db, jwt, cors
-├── models/              # SQLAlchemy models
-├── routes/              # REST API blueprints
-├── services/            # Business logic
-└── utils/               # Helpers (captcha, logger, validators)
+backend/
+├── run.py
+├── seed.py
+├── requirements.txt
+├── .env
+├── .gitignore
+├── uploads/
+│   ├── food/
+│   ├── delivery/
+│   └── beneficiaries/
+└── app/
+    ├── __init__.py
+    ├── config.py
+    ├── extensions.py
+    ├── models/
+    │   ├── __init__.py
+    │   ├── user.py
+    │   ├── donor.py
+    │   ├── ngo.py
+    │   ├── volunteer.py
+    │   ├── donation.py
+    │   ├── request.py
+    │   ├── assignment.py
+    │   ├── delivery.py
+    │   ├── location.py
+    │   ├── notification.py
+    │   ├── report.py
+    │   └── log.py
+    ├── routes/
+    │   ├── __init__.py
+    │   ├── auth.py
+    │   ├── admin.py
+    │   ├── donor.py
+    │   ├── ngo.py
+    │   ├── volunteer.py
+    │   ├── notification.py
+    │   └── location.py
+    ├── services/
+    │   ├── auth_service.py
+    │   ├── donation_service.py
+    │   ├── request_service.py
+    │   ├── assignment_service.py
+    │   ├── delivery_service.py
+    │   ├── notification_service.py
+    │   ├── sms_service.py
+    │   ├── location_service.py
+    │   └── report_service.py
+    └── utils/
+        ├── decorators.py
+        ├── captcha.py
+        ├── validators.py
+        ├── logger.py
+        └── helpers.py
